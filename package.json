@@ -11,8 +11,9 @@
     "start": "node bin/invoice"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
     "mri": "^1.2.0",
-    "pdfmake": "^0.2.10"
+    "puppeteer": "^24.43.1"
   },
   "engines": {
     "node": ">=20"

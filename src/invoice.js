@@ -1,139 +1,209 @@
 import { createRequire } from 'node:module';
+import path from 'node:path';
+import puppeteer from 'puppeteer';
 import { formatAmount, formatRate } from './format.js';
 
 const require = createRequire(import.meta.url);
-const PdfPrinter = require('pdfmake');
 
-const fonts = {
-  Helvetica: {
-    normal: 'Helvetica',
-    bold: 'Helvetica-Bold',
-    italics: 'Helvetica-Oblique',
-    bolditalics: 'Helvetica-BoldOblique',
-  },
-};
+const FONT_DIR = path.dirname(require.resolve('@fontsource/inter/files/inter-latin-400-normal.woff2'));
 
-const printer = new PdfPrinter(fonts);
+function fontUrl(weight) {
+  return `file://${path.join(FONT_DIR, `inter-latin-${weight}-normal.woff2`)}`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 export function computeTotal(items) {
   const sum = items.reduce((acc, item) => acc + item.amount, 0);
   return Math.round(sum * 100) / 100;
 }
 
-export function buildDocDef(data) {
-  const { currencySymbol, currency } = data;
-  const itemRows = data.items.map((item) => [
-    {
-      stack: [
-        { text: item.name, fontSize: 11 },
-        item.subline ? { text: item.subline, fontSize: 9, color: '#666666' } : null,
-      ].filter(Boolean),
-    },
-    { text: String(item.quantity), fontSize: 11 },
-    { text: `${currencySymbol} ${formatRate(item.rate)}`, fontSize: 11 },
-    { text: `${currencySymbol} ${formatAmount(item.amount)}`, fontSize: 11 },
-  ]);
+export function buildHtml(data) {
+  const { from, billTo, bank, currencySymbol, currency, items, total, number, issueDate, period } = data;
 
-  return {
-    pageSize: 'A4',
-    pageMargins: [60, 60, 60, 60],
-    defaultStyle: { font: 'Helvetica', fontSize: 11, color: '#111111' },
-    content: [
-      {
-        columns: [
-          { text: data.from.name.toUpperCase(), bold: true, characterSpacing: 1 },
-          { text: `NO.${data.number}`, alignment: 'right' },
-        ],
-      },
-      { text: 'INVOICE', fontSize: 56, bold: true, margin: [0, 28, 0, 24] },
-      {
-        text: [
-          { text: 'Date: ', bold: true },
-          { text: `  ${data.issueDate}` },
-        ],
-        margin: [0, 0, 0, 28],
-      },
-      {
-        columns: [
-          {
-            width: '*',
-            stack: [
-              { text: 'Billed to:', bold: true, margin: [0, 0, 0, 6] },
-              { text: data.billTo.name },
-              { text: data.billTo.country },
-              { text: data.billTo.email },
-            ],
-          },
-          {
-            width: '*',
-            stack: [
-              { text: 'From:', bold: true, margin: [0, 0, 0, 6] },
-              { text: data.from.name },
-              { text: data.from.country },
-              { text: data.from.email },
-            ],
-          },
-        ],
-        margin: [0, 0, 0, 32],
-      },
-      {
-        table: {
-          widths: ['*', 'auto', 'auto', 'auto'],
-          headerRows: 1,
-          body: [
-            [
-              { text: 'Item', fillColor: '#f3f3f3', margin: [6, 8, 6, 8] },
-              { text: 'Quantity', fillColor: '#f3f3f3', margin: [6, 8, 6, 8] },
-              { text: 'Price', fillColor: '#f3f3f3', margin: [6, 8, 6, 8] },
-              { text: 'Amount', fillColor: '#f3f3f3', margin: [6, 8, 6, 8] },
-            ],
-            ...itemRows.map((row) => row.map((cell) => ({ ...cell, margin: [6, 8, 6, 8] }))),
-          ],
-        },
-        layout: 'noBorders',
-        margin: [0, 0, 0, 60],
-      },
-      {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 475, y2: 0, lineWidth: 0.5, lineColor: '#cccccc' }],
-        margin: [0, 0, 0, 12],
-      },
-      {
-        columns: [
-          { width: '*', text: '' },
-          {
-            width: 'auto',
-            text: [
-              { text: 'Total   ', bold: true },
-              { text: `${currencySymbol} ${formatAmount(data.total)} ${currency}`, bold: true, fontSize: 12 },
-            ],
-          },
-        ],
-        margin: [0, 0, 0, 12],
-      },
-      {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 475, y2: 0, lineWidth: 0.5, lineColor: '#cccccc' }],
-        margin: [0, 0, 0, 60],
-      },
-      { text: 'Notes to Employer:', bold: true, margin: [0, 0, 0, 10] },
-      { text: data.from.name },
-      { text: data.bank.name },
-      { text: `SWIFT CODE: ${data.bank.swift}` },
-      { text: `Account number: ${data.bank.account}` },
-    ],
-  };
+  const itemRows = items
+    .map((item) => {
+      const subParts = [];
+      if (item.subline) subParts.push(escapeHtml(item.subline));
+      subParts.push(`${item.quantity}h × ${escapeHtml(currencySymbol)} ${escapeHtml(formatRate(item.rate))}`);
+      return `
+      <div class="item-row">
+        <div>
+          <div class="item-name">${escapeHtml(item.name)}</div>
+          <div class="item-sub">${subParts.join(' · ')}</div>
+        </div>
+        <div class="tabular item-amount">${escapeHtml(currencySymbol)} ${escapeHtml(formatAmount(item.amount))}</div>
+      </div>`;
+    })
+    .join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Invoice ${escapeHtml(number)}</title>
+<style>
+  @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; src: url('${fontUrl(400)}') format('woff2'); }
+  @font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; src: url('${fontUrl(500)}') format('woff2'); }
+  @font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; src: url('${fontUrl(600)}') format('woff2'); }
+  @font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; src: url('${fontUrl(700)}') format('woff2'); }
+  @font-face { font-family: 'Inter'; font-style: normal; font-weight: 800; src: url('${fontUrl(800)}') format('woff2'); }
+
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #111;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    padding: 26mm 22mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16mm; }
+  .name-banner { font-weight: 600; letter-spacing: 0.12em; font-size: 9pt; text-transform: uppercase; }
+  .meta-number { color: #999; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  h1 {
+    margin: 0 0 14mm 0;
+    font-size: 56pt;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+    color: #0a0a0a;
+  }
+
+  .meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; margin-bottom: 12mm; }
+  .label { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.1em; color: #9a9a9a; margin-bottom: 2mm; font-weight: 500; }
+  .field-name { font-weight: 600; color: #111; }
+  .muted { color: #707070; }
+
+  .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; margin-bottom: 16mm; }
+
+  .hr { height: 1px; background: #e8e8e8; margin: 6mm 0; }
+
+  .items-header { display: flex; justify-content: space-between; font-weight: 500; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.08em; color: #888; padding-bottom: 3mm; }
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12mm;
+    align-items: start;
+    padding: 4mm 0;
+  }
+  .item-name { font-weight: 500; }
+  .item-sub { color: #888; font-size: 9.5pt; margin-top: 1mm; }
+  .item-amount { font-weight: 500; font-size: 11pt; }
+
+  .total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 4mm;
+  }
+  .total-label { font-size: 11pt; font-weight: 600; color: #444; }
+  .total-amount { font-weight: 700; font-size: 18pt; letter-spacing: -0.02em; color: #0a0a0a; }
+  .total-currency { font-weight: 500; color: #888; margin-left: 4px; font-size: 11pt; letter-spacing: 0; }
+
+  .footer { margin-top: 22mm; padding-top: 6mm; border-top: 1px solid #e8e8e8; display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="name-banner">${escapeHtml(from.name)}</div>
+    <div class="meta-number">No. ${escapeHtml(number)}</div>
+  </div>
+
+  <h1>Invoice</h1>
+
+  <div class="meta-row">
+    <div>
+      <div class="label">Issue date</div>
+      <div class="field-name">${escapeHtml(issueDate)}</div>
+    </div>
+    <div>
+      <div class="label">Billing period</div>
+      <div class="field-name">${escapeHtml(period)}</div>
+    </div>
+  </div>
+
+  <div class="parties">
+    <div>
+      <div class="label">Billed to</div>
+      <div class="field-name">${escapeHtml(billTo.name)}</div>
+      <div class="muted">${escapeHtml(billTo.country)}</div>
+      <div class="muted">${escapeHtml(billTo.email)}</div>
+    </div>
+    <div>
+      <div class="label">From</div>
+      <div class="field-name">${escapeHtml(from.name)}</div>
+      <div class="muted">${escapeHtml(from.country)}</div>
+      <div class="muted">${escapeHtml(from.email)}</div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  <div class="items-header">
+    <div>Description</div>
+    <div>Amount</div>
+  </div>
+
+  ${itemRows}
+
+  <div class="hr"></div>
+
+  <div class="total">
+    <div class="total-label">Total due</div>
+    <div>
+      <span class="total-amount tabular">${escapeHtml(currencySymbol)} ${escapeHtml(formatAmount(total))}</span>
+      <span class="total-currency">${escapeHtml(currency)}</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="label">Payment</div>
+      <div class="field-name">${escapeHtml(bank.name)}</div>
+      <div class="muted">SWIFT ${escapeHtml(bank.swift)}</div>
+      <div class="muted tabular">Account ${escapeHtml(bank.account)}</div>
+    </div>
+    <div>
+      <div class="label">Notes</div>
+      <div class="muted">Thank you for your business.</div>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
-export function renderPdf(docDef) {
-  return new Promise((resolve, reject) => {
-    try {
-      const doc = printer.createPdfKitDocument(docDef);
-      const chunks = [];
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
-      doc.on('error', reject);
-      doc.end();
-    } catch (e) {
-      reject(e);
-    }
+export async function renderPdf(html) {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'load' });
+    await page.evaluateHandle('document.fonts.ready');
+    return await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      preferCSSPageSize: true,
+    });
+  } finally {
+    await browser.close();
+  }
 }

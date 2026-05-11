@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildDocDef, computeTotal } from '../src/invoice.js';
+import { buildHtml, computeTotal } from '../src/invoice.js';
 
 const DATA = {
   number: 29,
@@ -24,38 +24,34 @@ test('computeTotal: rounds to 2dp', () => {
   assert.equal(computeTotal([{ amount: 0.1 }, { amount: 0.2 }]), 0.3);
 });
 
-test('buildDocDef: returns object with content array', () => {
-  const doc = buildDocDef(DATA);
-  assert.equal(typeof doc, 'object');
-  assert.ok(Array.isArray(doc.content));
-  assert.ok(doc.content.length > 0);
+test('buildHtml: returns a non-empty html string', () => {
+  const html = buildHtml(DATA);
+  assert.equal(typeof html, 'string');
+  assert.ok(html.startsWith('<!DOCTYPE html>'));
+  assert.ok(html.includes('</html>'));
 });
 
-test('buildDocDef: contains the invoice number', () => {
-  const doc = buildDocDef(DATA);
-  const stringified = JSON.stringify(doc);
-  assert.ok(stringified.includes('NO.29'));
+test('buildHtml: contains the invoice number', () => {
+  const html = buildHtml(DATA);
+  assert.ok(html.includes('No. 29'));
 });
 
-test('buildDocDef: contains the period', () => {
-  const doc = buildDocDef(DATA);
-  const stringified = JSON.stringify(doc);
-  assert.ok(stringified.includes('March 21 - April 20'));
+test('buildHtml: contains the period', () => {
+  const html = buildHtml(DATA);
+  assert.ok(html.includes('March 21 - April 20'));
 });
 
-test('buildDocDef: contains the bank account', () => {
-  const doc = buildDocDef(DATA);
-  const stringified = JSON.stringify(doc);
-  assert.ok(stringified.includes('1093 2902 8616'));
+test('buildHtml: contains the bank account', () => {
+  const html = buildHtml(DATA);
+  assert.ok(html.includes('1093 2902 8616'));
 });
 
-test('buildDocDef: contains formatted total', () => {
-  const doc = buildDocDef(DATA);
-  const stringified = JSON.stringify(doc);
-  assert.ok(stringified.includes('kr 7,500.00'));
+test('buildHtml: contains the formatted total', () => {
+  const html = buildHtml(DATA);
+  assert.ok(html.includes('kr 7,500.00'));
 });
 
-test('buildDocDef: handles multiple items', () => {
+test('buildHtml: handles multiple items', () => {
   const multi = {
     ...DATA,
     items: [
@@ -64,8 +60,19 @@ test('buildDocDef: handles multiple items', () => {
     ],
     total: 8000,
   };
-  const doc = buildDocDef(multi);
-  const stringified = JSON.stringify(doc);
-  assert.ok(stringified.includes('Bonus'));
-  assert.ok(stringified.includes('kr 8,000.00'));
+  const html = buildHtml(multi);
+  assert.ok(html.includes('Bonus'));
+  assert.ok(html.includes('kr 8,000.00'));
+});
+
+test('buildHtml: escapes html-special characters in user input', () => {
+  const dangerous = {
+    ...DATA,
+    billTo: { name: 'A <script> & "B"', country: 'X', email: 'b@x.com' },
+  };
+  const html = buildHtml(dangerous);
+  assert.ok(html.includes('&lt;script&gt;'));
+  assert.ok(html.includes('&amp;'));
+  assert.ok(html.includes('&quot;'));
+  assert.ok(!html.includes('<script>'));
 });
