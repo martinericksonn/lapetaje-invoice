@@ -11,7 +11,7 @@ import {
   formatDisplayDate,
   formatPeriod,
 } from './dates.js';
-import { buildHtml, renderPdf, computeTotal } from './invoice.js';
+import { buildHtml, renderPdf, computeTotal, buildMetadata } from './invoice.js';
 import { formatAmount, formatRate } from './format.js';
 import { openFile } from './open.js';
 import { runInit } from './init.js';
@@ -166,7 +166,7 @@ async function generate(cwd, flags) {
   }
 
   const html = buildHtml(invoice);
-  const buffer = await renderPdf(html);
+  const buffer = await renderPdf(html, buildMetadata(invoice));
 
   const outputDir = path.join(cwd, 'output');
   fs.mkdirSync(outputDir, { recursive: true });

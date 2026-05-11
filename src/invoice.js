@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import puppeteer from 'puppeteer';
+import { PDFDocument } from 'pdf-lib';
 import { formatAmount, formatRate } from './format.js';
 
 const require = createRequire(import.meta.url);
@@ -332,7 +333,28 @@ export function buildHtml(data) {
 </html>`;
 }
 
-export async function renderPdf(html) {
+export function buildMetadata(data) {
+  return {
+    title: `Invoice No. ${data.number} — ${data.from.name}`,
+    author: data.from.name,
+    subject: `Invoice for ${data.period} · ${data.currencySymbol} ${formatAmount(data.total)} ${data.currency}`,
+    keywords: ['invoice', data.from.name, data.billTo.name, data.period, `No. ${data.number}`],
+  };
+}
+
+async function applyMetadata(buffer, meta) {
+  if (!meta) return buffer;
+  const pdf = await PDFDocument.load(buffer);
+  if (meta.title) pdf.setTitle(meta.title);
+  if (meta.author) pdf.setAuthor(meta.author);
+  if (meta.subject) pdf.setSubject(meta.subject);
+  if (meta.keywords) pdf.setKeywords(meta.keywords);
+  pdf.setProducer('lapetaje-invoice');
+  pdf.setCreator('lapetaje-invoice');
+  return Buffer.from(await pdf.save());
+}
+
+export async function renderPdf(html, meta) {
   const browser = await puppeteer.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -341,12 +363,13 @@ export async function renderPdf(html) {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'load' });
     await page.evaluateHandle('document.fonts.ready');
-    return await page.pdf({
+    const buffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: 0, right: 0, bottom: 0, left: 0 },
       preferCSSPageSize: true,
     });
+    return applyMetadata(buffer, meta);
   } finally {
     await browser.close();
   }
