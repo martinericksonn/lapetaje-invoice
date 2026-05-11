@@ -10,7 +10,7 @@ auto-computed billing periods, and persistent invoice history.
 Requires Node.js 20 or newer.
 
 ```bash
-git clone https://github.com/<your-username>/lapetaje-invoice.git
+git clone https://github.com/martinericksonn/lapetaje-invoice.git
 cd lapetaje-invoice
 npm install
 npm link        # optional — makes `invoice` available globally
