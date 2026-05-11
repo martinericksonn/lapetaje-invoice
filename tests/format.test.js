@@ -22,6 +22,10 @@ test('formatAmount: half-up rounding at .005', () => {
   assert.equal(formatAmount(0.005), '0.01');
 });
 
+test('formatAmount: half-up rounding at 1.005 (floating point error case)', () => {
+  assert.equal(formatAmount(1.005), '1.01');
+});
+
 test('formatAmount: negative numbers', () => {
   assert.equal(formatAmount(-100.5), '-100.50');
 });

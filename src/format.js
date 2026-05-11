@@ -1,6 +1,11 @@
 function roundHalfUp(value, decimals) {
-  const factor = 10 ** decimals;
-  return Math.sign(value) * Math.round(Math.abs(value) * factor) / factor;
+  const absValue = Math.abs(value);
+  const valStr = absValue.toString();
+  if (valStr.includes('e')) {
+    const factor = 10 ** decimals;
+    return Math.sign(value) * Math.round(absValue * factor) / factor;
+  }
+  return Math.sign(value) * Number(Math.round(valStr + 'e' + decimals) + 'e-' + decimals);
 }
 
 export function formatAmount(value) {
