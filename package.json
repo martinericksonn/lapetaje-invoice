@@ -1,0 +1,21 @@
+{
+  "name": "lapetaje-invoice",
+  "version": "0.1.0",
+  "description": "CLI tool to generate monthly salary invoice PDFs.",
+  "type": "module",
+  "bin": {
+    "invoice": "./bin/invoice"
+  },
+  "scripts": {
+    "test": "node --test tests/",
+    "start": "node bin/invoice"
+  },
+  "dependencies": {
+    "mri": "^1.2.0",
+    "pdfmake": "^0.2.10"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

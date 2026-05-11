@@ -1,0 +1,21 @@
+# Personal / secret
+config.local.json
+state.json
+output/
+
+# Dependencies & build
+node_modules/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# AI workflow docs (never commit)
+docs/superpowers/
+claude-workspace/
+.claude/
+.superpowers/
+CLAUDE.md
+AGENTS.md
+.cursor/
