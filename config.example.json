@@ -1,0 +1,22 @@
+{
+  "from": {
+    "name": "Your Full Name",
+    "country": "Country",
+    "email": "you@example.com"
+  },
+  "billTo": {
+    "name": "Client Name",
+    "country": "Country",
+    "email": "client@example.com"
+  },
+  "bank": {
+    "name": "Bank Name",
+    "swift": "BANKXXXX",
+    "account": "0000 0000 0000"
+  },
+  "rate": 50,
+  "currency": "USD",
+  "currencySymbol": "$",
+  "defaultHours": 160,
+  "startingInvoiceNumber": 1
+}
