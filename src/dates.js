@@ -63,7 +63,7 @@ export function formatDisplayDate(date) {
 export function formatPeriod(start, end) {
   const startStr = `${MONTH_NAMES[start.getUTCMonth()]} ${start.getUTCDate()}`;
   const endStr = `${MONTH_NAMES[end.getUTCMonth()]} ${end.getUTCDate()}`;
-  return `${startStr} - ${endStr}`;
+  return `${startStr} – ${endStr}`;
 }
 
 const DISPLAY_DATE_RE = /^(\d{1,2}) ([A-Z][a-z]+) (\d{4})$/;

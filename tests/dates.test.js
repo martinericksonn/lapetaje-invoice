@@ -73,7 +73,7 @@ test('formatDisplayDate', () => {
 test('formatPeriod', () => {
   const start = d('2026-03-21');
   const end = d('2026-04-20');
-  assert.equal(formatPeriod(start, end), 'March 21 - April 20');
+  assert.equal(formatPeriod(start, end), 'March 21 – April 20');
 });
 
 test('parseDisplayDate', () => {

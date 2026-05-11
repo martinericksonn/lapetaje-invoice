@@ -14,6 +14,14 @@ function fontUrl() {
   return `file://${path.join(FONT_DIR, 'geist-latin-wght-normal.woff2')}`;
 }
 
+function initialsOf(name) {
+  return String(name)
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase())
+    .join('');
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -34,6 +42,7 @@ export function buildHtml(data) {
     items, total, number, issueDate, period,
   } = data;
 
+  const monogram = initialsOf(from.name);
   const itemRows = items
     .map((item) => {
       const subParts = [];
@@ -73,6 +82,7 @@ export function buildHtml(data) {
     --ink-soft: #6B6B6B;
     --ink-mute: #9CA3AF;
     --paper:    #FFFFFF;
+    --tint:     #F7F6F2;
     --hair:     #E7E7E7;
     --hair-bold:#111111;
   }
@@ -83,11 +93,13 @@ export function buildHtml(data) {
     color: var(--ink);
     font-size: 10pt;
     line-height: 1.5;
-    padding: 26mm 28mm 24mm;
+    padding: 26mm 28mm 20mm;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     font-feature-settings: 'kern' 1, 'liga' 1, 'ss01' 1, 'cv11' 1;
     letter-spacing: -0.006em;
+    position: relative;
+    min-height: 297mm;
   }
 
   .tabular { font-variant-numeric: tabular-nums lining-nums; }
@@ -123,14 +135,31 @@ export function buildHtml(data) {
     font-variant-numeric: tabular-nums lining-nums;
   }
 
-  /* ── Wordmark — big bold sans ──────────────────────── */
+  /* ── Wordmark — big bold sans with identity rule ───── */
+  .wordmark-block { margin: 0 0 13mm; }
   .wordmark {
     font-size: 60pt;
     font-weight: 700;
     line-height: 0.95;
     letter-spacing: -0.052em;
     color: var(--ink);
-    margin: 0 0 13mm;
+    margin: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .wordmark .mono {
+    font-size: 8pt;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    padding: 0 0 4mm 0;
+    line-height: 1;
+  }
+  .wordmark-rule {
+    margin-top: 3mm;
+    border-bottom: 0.5pt solid var(--ink);
   }
 
   /* ── Meta grid: 2×2 ────────────────────────────────── */
@@ -199,29 +228,30 @@ export function buildHtml(data) {
     letter-spacing: 0;
   }
 
-  /* ── Total ─────────────────────────────────────────── */
+  /* ── Total — subtle tint band, the climax ──────────── */
   .total {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 6mm 0 7mm;
+    padding: 7mm 6mm 8mm;
+    margin: 0 -6mm 12mm;
+    background: var(--tint);
     border-top: 0.5pt solid var(--hair);
     border-bottom: 0.5pt solid var(--hair);
-    margin-bottom: 12mm;
   }
   .total .label-text {
     font-size: 10.5pt;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--ink);
     letter-spacing: -0.005em;
   }
   .total .amount-wrap {
     display: flex;
     align-items: baseline;
-    gap: 3mm;
+    gap: 1.6mm;
   }
   .total .amount {
-    font-size: 20pt;
+    font-size: 22pt;
     font-weight: 700;
     color: var(--ink);
     letter-spacing: -0.028em;
@@ -234,6 +264,8 @@ export function buildHtml(data) {
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--ink-mute);
+    align-self: baseline;
+    transform: translateY(-0.5mm);
   }
 
   /* ── Footer: Payment | Notes ───────────────────────── */
@@ -265,6 +297,26 @@ export function buildHtml(data) {
     color: var(--ink-soft);
     line-height: 1.55;
   }
+
+  /* ── Page footer at sheet bottom ───────────────────── */
+  .page-footer {
+    position: absolute;
+    left: 28mm;
+    right: 28mm;
+    bottom: 14mm;
+    padding-top: 3mm;
+    border-top: 0.4pt solid var(--hair);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 7.5pt;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .page-footer .center { letter-spacing: 0.32em; }
 </style>
 </head>
 <body>
@@ -273,7 +325,13 @@ export function buildHtml(data) {
     <div class="ref">No. ${escapeHtml(number)}</div>
   </div>
 
-  <h1 class="wordmark">Invoice</h1>
+  <div class="wordmark-block">
+    <h1 class="wordmark">
+      <span>Invoice</span>
+      <span class="mono">${escapeHtml(monogram)}</span>
+    </h1>
+    <div class="wordmark-rule"></div>
+  </div>
 
   <div class="meta">
     <div>
@@ -328,6 +386,12 @@ export function buildHtml(data) {
       <div class="label">Notes</div>
       <div class="notes-text">Thank you for your business.</div>
     </div>
+  </div>
+
+  <div class="page-footer">
+    <span>Invoice No. ${escapeHtml(number)}</span>
+    <span class="center">${escapeHtml(monogram)}</span>
+    <span>Page 1 of 1</span>
   </div>
 </body>
 </html>`;

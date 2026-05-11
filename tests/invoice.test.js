@@ -5,11 +5,11 @@ import { buildHtml, computeTotal } from '../src/invoice.js';
 const DATA = {
   number: 29,
   issueDate: '20 April 2026',
-  period: 'March 21 - April 20',
+  period: 'March 21 – April 20',
   from:   { name: 'Martin Erickson Lapetaje', country: 'Philippines', email: 'mel@datadiscoverylab.com' },
   billTo: { name: 'Frank Pap', country: 'Denmark', email: 'fp@datadiscoverylab.com' },
   bank:   { name: 'Union Bank of the Philippines', swift: 'UBPHPHMMXXX', account: '1093 2902 8616' },
-  items: [{ name: 'Rendered Hours', subline: 'March 21 - April 20', quantity: 160, rate: 46.875, amount: 7500 }],
+  items: [{ name: 'Rendered Hours', subline: 'March 21 – April 20', quantity: 160, rate: 46.875, amount: 7500 }],
   total: 7500,
   currency: 'DKK',
   currencySymbol: 'kr',
@@ -38,7 +38,7 @@ test('buildHtml: contains the invoice number', () => {
 
 test('buildHtml: contains the period', () => {
   const html = buildHtml(DATA);
-  assert.ok(html.includes('March 21 - April 20'));
+  assert.ok(html.includes('March 21 – April 20'));
 });
 
 test('buildHtml: contains the bank account', () => {
@@ -55,7 +55,7 @@ test('buildHtml: handles multiple items', () => {
   const multi = {
     ...DATA,
     items: [
-      { name: 'Rendered Hours', subline: 'March 21 - April 20', quantity: 160, rate: 46.875, amount: 7500 },
+      { name: 'Rendered Hours', subline: 'March 21 – April 20', quantity: 160, rate: 46.875, amount: 7500 },
       { name: 'Bonus', subline: '', quantity: 1, rate: 500, amount: 500 },
     ],
     total: 8000,
