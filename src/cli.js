@@ -33,6 +33,7 @@ Generate options:
   --number N       Force invoice number
   --force          Bypass duplicate-period check
   --preview        Print summary, don't write PDF or update state
+  --dry-run        Write PDF to output/dry-run.pdf, don't update state
   --no-open        Don't open PDF after generation
 `;
 
@@ -70,7 +71,7 @@ export function parseArgs(argv) {
   ({ value: numberRaw, argv } = extractNumericFlag(argv, 'number'));
 
   const parsed = mri(argv, {
-    boolean: ['help', 'version', 'preview', 'force', 'no-open'],
+    boolean: ['help', 'version', 'preview', 'force', 'no-open', 'dry-run'],
     string: ['date', 'period'],
     alias: { h: 'help', v: 'version' },
     default: { open: true },
@@ -88,6 +89,7 @@ export function parseArgs(argv) {
   if (parsed.period) flags.period = parsed.period;
   if (parsed.preview) flags.preview = true;
   if (parsed.force) flags.force = true;
+  if (parsed['dry-run']) flags.dryRun = true;
   if (parsed.open === false) flags.noOpen = true;
 
   if (subcommand === 'init') return { command: 'init', opts: { flags } };
@@ -133,7 +135,7 @@ async function generate(cwd, flags) {
   const issueDate = formatDisplayDate(cycle.end);
   const period = formatPeriod(cycle.start, cycle.end);
 
-  if (!flags.preview && !flags.force) {
+  if (!flags.preview && !flags.force && !flags.dryRun) {
     const dup = findDuplicate(state, isoDate(cycle.start), isoDate(cycle.end));
     if (dup) {
       const err = new Error(
@@ -168,22 +170,25 @@ async function generate(cwd, flags) {
 
   const outputDir = path.join(cwd, 'output');
   fs.mkdirSync(outputDir, { recursive: true });
-  const outputPath = path.join(outputDir, `lapetaje-invoice-${number}.pdf`);
+  const fileName = flags.dryRun ? 'dry-run.pdf' : `lapetaje-invoice-${number}.pdf`;
+  const outputPath = path.join(outputDir, fileName);
   fs.writeFileSync(outputPath, buffer);
 
-  const historyEntry = {
-    number,
-    issueDate: isoDate(cycle.end),
-    periodStart: isoDate(cycle.start),
-    periodEnd: isoDate(cycle.end),
-    hours,
-    rate,
-    amount: total,
-    currency: config.currency,
-  };
-  saveState(cwd, appendHistory(state, historyEntry));
+  if (!flags.dryRun) {
+    const historyEntry = {
+      number,
+      issueDate: isoDate(cycle.end),
+      periodStart: isoDate(cycle.start),
+      periodEnd: isoDate(cycle.end),
+      hours,
+      rate,
+      amount: total,
+      currency: config.currency,
+    };
+    saveState(cwd, appendHistory(state, historyEntry));
+  }
 
-  process.stdout.write(`✓ ${path.relative(cwd, outputPath)}\n`);
+  process.stdout.write(`${flags.dryRun ? '⚙ dry-run' : '✓'} ${path.relative(cwd, outputPath)}\n`);
   process.stdout.write(summarize(invoice) + '\n');
 
   if (!flags.noOpen) openFile(outputPath);
