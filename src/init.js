@@ -81,7 +81,7 @@ export async function runInit(cwd) {
         swift: await prompt(ask, 'SWIFT code'),
         account: await prompt(ask, 'Account number'),
       },
-      rate: await promptNumber(ask, 'Hourly rate'),
+      monthlyAmount: await promptNumber(ask, 'Monthly amount'),
       currency: await prompt(ask, 'Currency code', 'DKK'),
       currencySymbol: await prompt(ask, 'Currency symbol', 'kr'),
       defaultHours: await promptNumber(ask, 'Default monthly hours', 160),

@@ -27,7 +27,7 @@ Commands:
 
 Generate options:
   --hours N        Override default hours
-  --rate N         Override hourly rate
+  --amount N       Override monthly amount (rate is derived: amount / hours)
   --period STR     Override period ("April 21 - May 20")
   --date STR       Override invoice date ("20 May 2026")
   --number N       Force invoice number
@@ -65,9 +65,9 @@ function extractNumericFlag(argv, name) {
 }
 
 export function parseArgs(argv) {
-  let hoursRaw, rateRaw, numberRaw;
+  let hoursRaw, amountRaw, numberRaw;
   ({ value: hoursRaw, argv } = extractNumericFlag(argv, 'hours'));
-  ({ value: rateRaw, argv } = extractNumericFlag(argv, 'rate'));
+  ({ value: amountRaw, argv } = extractNumericFlag(argv, 'amount'));
   ({ value: numberRaw, argv } = extractNumericFlag(argv, 'number'));
 
   const parsed = mri(argv, {
@@ -83,7 +83,7 @@ export function parseArgs(argv) {
   const flags = {};
 
   if (hoursRaw !== undefined) { flags.hours = Number(hoursRaw); assertPositive('hours', flags.hours); }
-  if (rateRaw !== undefined) { flags.rate = Number(rateRaw); assertPositive('rate', flags.rate); }
+  if (amountRaw !== undefined) { flags.amount = Number(amountRaw); assertPositive('amount', flags.amount); }
   if (numberRaw !== undefined) { flags.number = Number(numberRaw); assertPositive('number', flags.number); }
   if (parsed.date) flags.date = parsed.date;
   if (parsed.period) flags.period = parsed.period;
@@ -128,8 +128,8 @@ async function generate(cwd, flags) {
   }
 
   const hours = flags.hours ?? config.defaultHours;
-  const rate = flags.rate ?? config.rate;
-  const amount = Math.round(hours * rate * 100) / 100;
+  const amount = flags.amount ?? config.monthlyAmount;
+  const rate = Math.round((amount / hours) * 1000) / 1000;
   const total = computeTotal([{ amount }]);
   const number = flags.number ?? state.lastInvoiceNumber + 1;
   const issueDate = formatDisplayDate(cycle.end);

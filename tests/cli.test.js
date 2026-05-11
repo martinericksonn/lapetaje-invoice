@@ -34,14 +34,14 @@ test('parseArgs: --hours flag', () => {
   assert.equal(opts.flags.hours, 152);
 });
 
-test('parseArgs: --rate, --date, --period, --number flags', () => {
+test('parseArgs: --amount, --date, --period, --number flags', () => {
   const { opts } = parseArgs([
-    '--rate', '50',
+    '--amount', '4000',
     '--date', '20 May 2026',
     '--period', 'April 21 - May 20',
     '--number', '30',
   ]);
-  assert.equal(opts.flags.rate, 50);
+  assert.equal(opts.flags.amount, 4000);
   assert.equal(opts.flags.date, '20 May 2026');
   assert.equal(opts.flags.period, 'April 21 - May 20');
   assert.equal(opts.flags.number, 30);
@@ -57,6 +57,6 @@ test('parseArgs: rejects negative hours', () => {
   assert.throws(() => parseArgs(['--hours', '-1']), /positive/);
 });
 
-test('parseArgs: rejects non-numeric rate', () => {
-  assert.throws(() => parseArgs(['--rate', 'fifty']), /positive/);
+test('parseArgs: rejects non-numeric amount', () => {
+  assert.throws(() => parseArgs(['--amount', 'fifty']), /positive/);
 });

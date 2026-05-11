@@ -9,7 +9,7 @@ const VALID = {
   from: { name: 'A', country: 'X', email: 'a@x.com' },
   billTo: { name: 'B', country: 'Y', email: 'b@y.com' },
   bank: { name: 'Bank', swift: 'AAAAAA', account: '111' },
-  rate: 50,
+  monthlyAmount: 8000,
   currency: 'USD',
   currencySymbol: '$',
   defaultHours: 160,
@@ -21,10 +21,10 @@ test('validateConfig: returns null for valid config', () => {
 });
 
 test('validateConfig: reports missing top-level field', () => {
-  const { rate, ...rest } = VALID;
+  const { monthlyAmount, ...rest } = VALID;
   const errors = validateConfig(rest);
   assert.ok(errors);
-  assert.ok(errors.some((e) => e.includes('rate')));
+  assert.ok(errors.some((e) => e.includes('monthlyAmount')));
 });
 
 test('validateConfig: reports missing nested field', () => {
@@ -34,18 +34,18 @@ test('validateConfig: reports missing nested field', () => {
   assert.ok(errors.some((e) => e.includes('bank.account')));
 });
 
-test('validateConfig: rejects non-numeric rate', () => {
-  const cfg = { ...VALID, rate: 'fifty' };
+test('validateConfig: rejects non-numeric monthlyAmount', () => {
+  const cfg = { ...VALID, monthlyAmount: 'fifty' };
   const errors = validateConfig(cfg);
   assert.ok(errors);
-  assert.ok(errors.some((e) => e.includes('rate')));
+  assert.ok(errors.some((e) => e.includes('monthlyAmount')));
 });
 
-test('validateConfig: rejects negative rate', () => {
-  const cfg = { ...VALID, rate: -1 };
+test('validateConfig: rejects negative monthlyAmount', () => {
+  const cfg = { ...VALID, monthlyAmount: -1 };
   const errors = validateConfig(cfg);
   assert.ok(errors);
-  assert.ok(errors.some((e) => e.includes('rate')));
+  assert.ok(errors.some((e) => e.includes('monthlyAmount')));
 });
 
 test('loadConfig: missing file returns specific error', () => {
@@ -62,7 +62,7 @@ test('loadConfig: valid file loads', () => {
   try {
     fs.writeFileSync(path.join(dir, 'config.local.json'), JSON.stringify(VALID));
     const config = loadConfig(dir);
-    assert.equal(config.rate, 50);
+    assert.equal(config.monthlyAmount, 8000);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -71,7 +71,7 @@ test('loadConfig: valid file loads', () => {
 test('loadConfig: invalid file throws with field list', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'invoice-test-'));
   try {
-    fs.writeFileSync(path.join(dir, 'config.local.json'), JSON.stringify({ rate: 50 }));
+    fs.writeFileSync(path.join(dir, 'config.local.json'), JSON.stringify({ monthlyAmount: 8000 }));
     assert.throws(() => loadConfig(dir), /from\.name/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });

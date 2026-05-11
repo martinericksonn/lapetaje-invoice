@@ -8,7 +8,7 @@ const STRING_FIELDS = [
   'currency', 'currencySymbol',
 ];
 
-const POSITIVE_NUMBER_FIELDS = ['rate', 'defaultHours', 'startingInvoiceNumber'];
+const POSITIVE_NUMBER_FIELDS = ['monthlyAmount', 'defaultHours', 'startingInvoiceNumber'];
 
 function getPath(obj, dottedPath) {
   return dottedPath.split('.').reduce((acc, key) => (acc == null ? acc : acc[key]), obj);

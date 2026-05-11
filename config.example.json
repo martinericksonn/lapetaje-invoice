@@ -14,7 +14,7 @@
     "swift": "BANKXXXX",
     "account": "0000 0000 0000"
   },
-  "rate": 50,
+  "monthlyAmount": 8000,
   "currency": "USD",
   "currencySymbol": "$",
   "defaultHours": 160,

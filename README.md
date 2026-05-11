@@ -22,9 +22,11 @@ npm link        # optional — makes `invoice` available globally
 invoice init
 ```
 
-You'll be prompted for your name, client details, bank info, hourly rate,
+You'll be prompted for your name, client details, bank info, monthly amount,
 currency, default hours, and starting invoice number. The answers are written
 to `config.local.json` in the current directory.
+
+The hourly rate shown on the invoice is derived from `monthlyAmount / defaultHours`.
 
 `config.local.json`, `state.json`, and `output/` are all gitignored — your
 personal data never enters the repo.
@@ -35,7 +37,8 @@ personal data never enters the repo.
 invoice                       # generate next month's invoice
 invoice --preview             # see what would be generated, no write
 invoice --hours 152           # override default hours
-invoice --rate 50             # override hourly rate
+invoice --amount 4000         # override monthly amount (rate is derived)
+invoice --dry-run             # write output/dry-run.pdf, don't update state
 invoice --period "April 21 - May 20"
 invoice --date "20 May 2026"
 invoice --number 30           # force invoice number
