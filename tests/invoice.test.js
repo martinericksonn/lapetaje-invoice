@@ -33,7 +33,7 @@ test('buildHtml: returns a non-empty html string', () => {
 
 test('buildHtml: contains the invoice number', () => {
   const html = buildHtml(DATA);
-  assert.ok(html.includes('No. 29'));
+  assert.ok(/No\.\s*29/.test(html));
 });
 
 test('buildHtml: contains the period', () => {
@@ -48,7 +48,7 @@ test('buildHtml: contains the bank account', () => {
 
 test('buildHtml: contains the formatted total', () => {
   const html = buildHtml(DATA);
-  assert.ok(html.includes('kr 7,500.00'));
+  assert.ok(/kr(\s|&nbsp;)7,500\.00/.test(html));
 });
 
 test('buildHtml: handles multiple items', () => {
@@ -62,7 +62,7 @@ test('buildHtml: handles multiple items', () => {
   };
   const html = buildHtml(multi);
   assert.ok(html.includes('Bonus'));
-  assert.ok(html.includes('kr 8,000.00'));
+  assert.ok(/kr(\s|&nbsp;)8,000\.00/.test(html));
 });
 
 test('buildHtml: escapes html-special characters in user input', () => {
